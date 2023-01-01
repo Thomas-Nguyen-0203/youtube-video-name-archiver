@@ -179,10 +179,10 @@ def convert_playlist_url_to_playlist_obj(url: str) -> Union[Playlist,None]:
 
 			code = result_json["error"]["code"]
 
-			if (code == "400"):
+			if (code == 400):
 				err_print("Your API key is expired, please get a new one.")
 
-			elif (code == "404"):
+			elif (code == 404):
 				err_print(f"The url for the playlist ({url}) is invalid, please recheck it.")
 
 			return None
