@@ -87,7 +87,7 @@ def main() -> None:
 		archive[this_playlist.get_id()] = this_playlist.construct_json_obj()
 
 	# I listen to songs that contain non-ascii characters a lot.
-	json.dump(archive, output_file, ensure_ascii=False)
+	json.dump(archive, output_file, ensure_ascii=False, indent=4)
 	output_file.close()
 	
 
