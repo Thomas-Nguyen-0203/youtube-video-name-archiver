@@ -1,34 +1,43 @@
+# External
 import requests
+
+# Python
 import csv
 from typing import *
 import re
 import sys
-import os
 import pathlib
+import json
 
+# Internal
 from configuration import *
 from Video import Video
+from Playlist import Playlist
 
 def main() -> None:
 	
-	if (len(sys.argv) < 2):
+	if (len(sys.argv) != 3):
 
 		err_print(
-			"Usage: python3 main.py <playlists_link> ... <csv_file_name>",
+			"Usage: python3 archiver.py <input_file> <output_file>",
+			"<input_file> should contain a valid <playlist_link> per line.",
 			"<playlist_link> is in the form of \"https://www.youtube.com/playlist?list=<playlist_id>\"",
 			sep="\n\n"
 		)
 
 		exit(1)
 
-	csv_file_name = pathlib.Path(sys.argv[-1])
-	csv_file_name = csv_file_name.expanduser()
+	archive_file_name = pathlib.Path(sys.argv[2])
+	archive_file_name = archive_file_name.expanduser()
+
+	input_file = pathlib.Path(sys.argv[1])
+	input_file = input_file.expanduser()
 
 	stop = False
 
-	if (csv_file_name.exists()):
+	if (archive_file_name.exists()):
 
-		print(f"File with name {sys.argv[-1]} already exists, Overwrite the file? y/n")
+		print(f"File with name {archive_file_name.name} already exists, Overwrite the file? y/n")
 		stop = (input().lower() == "n")
 
 	if (stop):
@@ -36,10 +45,15 @@ def main() -> None:
 		exit()
 
 	try:
-		output_file = open(sys.argv[-1], "w")
+		output_file = open(sys.argv[2], "w")
+		playlists = input_file.open("r")
 
 	except PermissionError:
-		err_print("Please give me sufficient permission to open the file.")
+		err_print("Please give me sufficient permission to open the files.")
+		exit(1)
+
+	except FileNotFoundError:
+		err_print("The input file does not exist, please recheck your input file.")
 		exit(1)
 
 	except OSError:
@@ -50,9 +64,29 @@ def main() -> None:
 		err_print("Something really wrong happened and I could not tell what it is.")
 		exit(1)
 
+	archive = {}
+
+	while True:
+
+		line = playlists.readline()
+
+		if not line:
+			playlists.close()
+			break
+
+		url = line.strip()
+
+		this_playlist = convert_playlist_url_to_playlist_obj(url)
+
+		if not (this_playlist):
+			err_print(f"The url {url} is invalid, please recheck it.")
+			continue
+
+		archive[this_playlist.get_id()] = this_playlist.construct_json_obj()
+
+	json.dump(archive, output_file)
 	output_file.close()
-		
-	pass 
+	
 
 def err_print(*args, **kwargs) -> None:
 	'''
@@ -64,14 +98,16 @@ def err_print(*args, **kwargs) -> None:
 	Returns:
 		None
 	
-	It works like print() but instead of writing to stdout, it writes to stderr.
+	It works like print() but instead of writing to stdout, it writes to 
+	stderr.
 	'''
 
 	print(*args, **kwargs, file=sys.stderr)
 	
 def playlist_url_verifier(url: str) -> Union[str,None]:
 	'''
-	This function uses regular expression to verify whether the given URL is a valid URL to a Youtube playlist.
+	This function uses regular expression to verify whether the given URL is a 
+	valid URL to a Youtube playlist.
 
 	Args:
 		url: the url to the playlist.
@@ -81,8 +117,85 @@ def playlist_url_verifier(url: str) -> Union[str,None]:
 
 		None if the regular expression does not match.
 	'''
+	matched_id = PLAYLIST_REGEX.search(url)
 
-	pass
+	if not (matched_id):
+		return None
+
+	return matched_id.group(1)
+
+def convert_playlist_url_to_playlist_obj(url: str) -> Union[Playlist,None]:
+	'''
+	This function takes in an url to a Youtube playlist and attempt to convert 
+	it to a playlist object.
+
+	Args:
+		url: the url to the playlist.
+
+	Returns:
+		A playlist object representing the playlist.
+
+		None if the url is not valid.
+	'''
+
+	PARAMS: Dict[str,str] = {
+		"part": "snippet",
+		"maxResults": "50",
+		"key": f"{API_KEY}",
+		"fields": "nextPageToken,items(snippet(title,videoOwnerChannelTitle,resourceId/videoId))"
+	}
+	
+	# Check if the url is a valid one using regex.
+
+	playlist_id = playlist_url_verifier(url)
+
+	if not (playlist_id):
+		return None
+
+	this_playlist = Playlist(playlist_id) 
+
+	PARAMS["playlistId"] = playlist_id
+
+	while True:
+		api_call = requests.get(API_URL, params=PARAMS)
+		result_json = api_call.json()
+
+		if ("error" in result_json):
+			return None
+
+		video_information_list = result_json["items"]
+
+		for video in video_information_list:
+			current_video = video["snippet"]
+			
+			if ("videoOwnerChannelTitle" not in current_video):
+				channel = "Deleted Channel"
+
+			else:
+				channel = current_video["videoOwnerChannelTitle"]
+			
+			video_object = Video(
+				current_video["title"], 
+				channel,
+				current_video["resourceId"]["videoId"]
+				)
+
+			this_playlist.add_video(video_object)
+
+		if ("nextPageToken" not in result_json):
+			break
+
+		PARAMS["pageToken"] = result_json["nextPageToken"]
+
+	return this_playlist
+
+def test():
+	a = convert_playlist_url_to_playlist_obj(
+		"https://www.youtube.com/watch?v=8fKYiTUK-JQ&list=PL9FUXHTBubp-_e0wyNu1jfVVJ2QVAi5NW"
+		)
+
+	print(a)
+
 
 if (__name__ == "__main__"):
 	main()
