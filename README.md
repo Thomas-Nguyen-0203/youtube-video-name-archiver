@@ -25,9 +25,11 @@ JSON-representation of a playlist
 ```python
 playlist = {
 	"id": str,
-	"videos": [
-		video
-	],
+	"videos": {
+		video_id: video
+	},
 	"link": str
 }
 ```
+
+The use of a dictionary instead of an array will help a lot with speed once we are comparing 2 archives.
