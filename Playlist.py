@@ -36,23 +36,3 @@ class Playlist:
 
     def __repr__(self):
         return str(self.construct_json_obj())
-
-
-def test():
-    file = open("test.json", "w")
-
-    songa = Video("Electrical Surfin", "Tokino Sora", "01")
-    songb = Video("Caramel Devil", "Yozora Mel", "02")
-    songc = Video("Linger Ringer", "Momosuzu Nene", "3")
-    
-    playlist = Playlist("0")
-
-    playlist.add_video(songa)
-    playlist.add_video(songb)
-    playlist.add_video(songc)
-
-    json.dump(playlist.construct_json_obj(), file)
-    file.close()
-
-if __name__ == "__main__":
-    test()
