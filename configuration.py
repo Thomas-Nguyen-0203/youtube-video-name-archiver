@@ -10,7 +10,3 @@ API_URL: str = "https://www.googleapis.com/youtube/v3/playlistItems"
 _PLAYLIST_URL_REGEX_STR: str = "https://(?:www\\.)?youtube\\.com/playlist\\?list=([a-zA-Z0-9_\\-]+)"
 
 PLAYLIST_REGEX: re = re.compile(_PLAYLIST_URL_REGEX_STR)
-
-PARAMS: dict[str,str] = {
-
-}
