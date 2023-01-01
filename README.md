@@ -8,3 +8,26 @@ This project was initiated so that it could help me in understanding the use of 
 This project depends on the external module requests so you need to install it to use this program.
 
 Also, I made this project using python version 3.8.10 but I think any version of Python > 3.5 should work.
+
+JSON-representation of a video
+
+```python
+video = {
+	"id": str,
+	"name": str,
+	"channel": str,
+	"link": str
+}
+```
+
+JSON-representation of a playlist
+
+```python
+playlist = {
+	"id": str,
+	"videos": [
+		video
+	],
+	"link": str
+}
+```
