@@ -82,7 +82,6 @@ def main() -> None:
 		this_playlist = convert_playlist_url_to_playlist_obj(url)
 
 		if not (this_playlist):
-			err_print(f"The url {url} is invalid, please recheck it.")
 			continue
 
 		archive[this_playlist.get_id()] = this_playlist.construct_json_obj()
@@ -177,6 +176,15 @@ def convert_playlist_url_to_playlist_obj(url: str) -> Union[Playlist,None]:
 
 		# Error in response means the id is not valid.
 		if ("error" in result_json):
+
+			code = result_json["error"]["code"]
+
+			if (code == "400"):
+				err_print("Your API key is expired, please get a new one.")
+
+			elif (code == "404"):
+				err_print(d"The url for the playlist ({url}) is invalid, please recheck it.")
+
 			return None
 
 		video_information_list = result_json["items"]
