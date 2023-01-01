@@ -22,11 +22,13 @@ def main() -> None:
 			"Usage: python3 archiver.py <input_file> <output_file>",
 			"<input_file> should contain a valid <playlist_link> per line.",
 			"<playlist_link> is in the form of \"https://www.youtube.com/playlist?list=<playlist_id>\"",
+			"Also works for a video that is being watched from a playlist (ie, has a link of youtube.com/watch?v=<id>&list=<id>&ab_channel=<channel>",
 			sep="\n\n"
 		)
 
 		exit(1)
 
+	# Check existence of both files.
 	archive_file_name = pathlib.Path(sys.argv[2])
 	archive_file_name = archive_file_name.expanduser()
 
@@ -35,6 +37,7 @@ def main() -> None:
 
 	stop = False
 
+	# Warn the user of potential overwriting.
 	if (archive_file_name.exists()):
 
 		print(f"File with name {archive_file_name.name} already exists, Overwrite the file? y/n")
@@ -84,7 +87,8 @@ def main() -> None:
 
 		archive[this_playlist.get_id()] = this_playlist.construct_json_obj()
 
-	json.dump(archive, output_file)
+	# I listen to songs that contain non-ascii characters a lot.
+	json.dump(archive, output_file, ensure_ascii=False)
 	output_file.close()
 	
 
@@ -122,6 +126,7 @@ def playlist_url_verifier(url: str) -> Union[str,None]:
 	if not (matched_id):
 		return None
 
+	# Capture group 1 is the id of the playlist.
 	return matched_id.group(1)
 
 def convert_playlist_url_to_playlist_obj(url: str) -> Union[Playlist,None]:
@@ -137,6 +142,9 @@ def convert_playlist_url_to_playlist_obj(url: str) -> Union[Playlist,None]:
 
 		None if the url is not valid.
 	'''
+
+	# Visit https://developers.google.com/youtube/v3/docs/playlistItems to 
+	# understand what are the parameters.
 
 	PARAMS: Dict[str,str] = {
 		"part": "snippet",
@@ -156,20 +164,28 @@ def convert_playlist_url_to_playlist_obj(url: str) -> Union[Playlist,None]:
 
 	PARAMS["playlistId"] = playlist_id
 
+	# Max size is 50 entries per call so we need to call it until we exhaust 
+	# the playlist.
+
+	# The cost is prob sum floor(n_i/50) from i = 1 to n.
+	# n_i denotes the size of playlist i.
+	# Assuming we have n playlists.
+
 	while True:
 		api_call = requests.get(API_URL, params=PARAMS)
 		result_json = api_call.json()
 
+		# Error in response means the id is not valid.
 		if ("error" in result_json):
 			return None
 
 		video_information_list = result_json["items"]
 
 		for video in video_information_list:
-			current_video = video["snippet"]
+			current_video = video["snippet"] 
 			
 			if ("videoOwnerChannelTitle" not in current_video):
-				channel = "Deleted Channel"
+				channel = "Unknown Channel"
 
 			else:
 				channel = current_video["videoOwnerChannelTitle"]
@@ -182,20 +198,13 @@ def convert_playlist_url_to_playlist_obj(url: str) -> Union[Playlist,None]:
 
 			this_playlist.add_video(video_object)
 
+		# Sign of playlist exhausted.
 		if ("nextPageToken" not in result_json):
 			break
 
 		PARAMS["pageToken"] = result_json["nextPageToken"]
 
 	return this_playlist
-
-def test():
-	a = convert_playlist_url_to_playlist_obj(
-		"https://www.youtube.com/watch?v=8fKYiTUK-JQ&list=PL9FUXHTBubp-_e0wyNu1jfVVJ2QVAi5NW"
-		)
-
-	print(a)
-
 
 if (__name__ == "__main__"):
 	main()
