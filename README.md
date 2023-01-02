@@ -1,4 +1,6 @@
 # youtube-video-name-archiver
+
+## Introduction
 Don't you hate it when you are vibing with your crazily cool youtube music playlist (which may or may not contain bunch of niche songs that is reposted from Nico Nico Douga) 
 that you have been building up for 5 years but then one day, the warning: "unavailable videos are hidden" shows up? Or when you just revisit a playlist that you created a decade ago,
 only for it to be filled with "Unavailable video" or "Deleted video"? 
@@ -14,6 +16,28 @@ Also, I made this project using python version 3.8.10 but I think any version of
 - requests module (Latest release)
 - A Google API key
 - Python interpreter (v3.8 was used to make this program but should work for all Python > 3.5)
+
+## Usage
+### Archiver
+To use the archiver, you need to create an input file which contains valid URL's to one or more Youtube playlists (URL's of the form `https://www.youtube.com/playlist?list=<playlist_id>`).
+
+__Note:__ This program also works with URL of a video inside the playlist (ie videos with URL of the form: `https://www.youtube.com/watch?v=<video_id>&list=<playlist_id>`)
+
+An example of a valid input file and its output can be found in example folder.
+
+Then in order to run the program you just need to run
+
+```bash
+python3 archiver.py <name_of_input_file> <name_of_output_file>
+```
+
+And the program will produce its output and write to the file with name given by <name_of_output_file>
+
+Since this program lets the user name its own output, I will not enforce any naming rules to the output file, however, since the output is in JSON syntax, a file extension of `.json` is advised.
+
+### Comparator
+
+<!--TODO-->
 
 ## JSON-representation of various objects
 
@@ -51,3 +75,11 @@ archive = {
 __Note__: an archive may have one or more playlists.
 
 The use of a dictionary instead of an array will help a lot with speed once we are comparing 2 archives and 2 playlists.
+
+
+# Cost per run
+Since I chose 50 videos per call (the maximum number), the expected cost per run is:
+$$\sum_{i = 1}^n \left\lceil\frac{N_i}{50}\right\rceil$$
+for: 
+- $n$ the number of playlists of the input
+- $N_i$ the number of videos in the $i^{th}$ playlist  
