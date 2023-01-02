@@ -26,6 +26,15 @@ class Video:
         This method constructs the dictionary which is the representation of 
         the video and return it.
 
+		As noted in README, the JSON representation of a video is of the form
+
+		{
+			"id": str.
+			"name": str,
+			"channel": str
+			"link": str
+		}
+
         Returns:
             The dictionary representation of the JSON object of the video.
         '''
@@ -37,23 +46,3 @@ class Video:
 		}
 
 		return json_obj
-	
-	def __repr__(self) -> str:
-		return self.name + "," + self.channel + "," + self.link
-
-	def get_list(self) -> List[str]:
-		return [self.name, self.channel, self.link, self.id]
-
-	def __eq__(self, other: 'Video'):
-		
-		# Youtube video's ids are unique so comparing it should be the most 
-		# logical way
-		if not (isinstance(other, Video)):
-
-			return False
-
-		if (other.id == self.id):
-			return True
-
-		return False
-		
