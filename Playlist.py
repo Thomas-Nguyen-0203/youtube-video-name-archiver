@@ -22,6 +22,18 @@ class Playlist:
         This method constructs the dictionary which is the representation of 
         the playlist and return it.
 
+        As noted in README, the JSON representation of a playlist is of the 
+        form:
+
+        {
+            "id": str,
+            "name": str
+            "videos": {
+                video_id: video
+            }
+            "link": str
+        }
+
         Returns:
             The dictionary representation of the JSON.
         '''
@@ -33,6 +45,3 @@ class Playlist:
             }
 
         return result
-
-    def __repr__(self):
-        return str(self.construct_json_obj())
