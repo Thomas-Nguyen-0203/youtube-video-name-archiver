@@ -2,12 +2,12 @@
 import requests
 
 # Python
-import csv
 from typing import *
 import re
 import sys
 import pathlib
 import json
+import os
 
 # Internal
 from configuration import *
@@ -28,12 +28,19 @@ def main() -> None:
 
 		exit(1)
 
+	output_file_path = sys.argv[2]
+	input_file_path = sys.argv[1]
+
 	# Check existence of both files.
-	archive_file_name = pathlib.Path(sys.argv[2])
+	archive_file_name = pathlib.Path(output_file_path)
 	archive_file_name = archive_file_name.expanduser()
 
-	input_file = pathlib.Path(sys.argv[1])
+	input_file = pathlib.Path(input_file_path)
 	input_file = input_file.expanduser()
+
+	if (input_file.samefile(archive_file_name)):
+		err_print("Input file cannot be the same file as output file. Please recheck your arguments.")
+		exit(1)
 
 	stop = False
 
@@ -47,27 +54,44 @@ def main() -> None:
 		print("The program will now exit...")
 		exit()
 
+	output_file_problem = True
+	has_problem = False
+
 	try:
-		output_file = open(sys.argv[2], "w")
+		output_file = open(output_file_path, "w")
+
+		output_file_problem = False
+
 		playlists = input_file.open("r")
 
 	except PermissionError:
 		err_print("Please give me sufficient permission to open the files.")
-		exit(1)
+		has_problem = True
 
 	except FileNotFoundError:
 		err_print("The input file does not exist, please recheck your input file.")
-		exit(1)
+		has_problem = True
 
 	except OSError:
 		err_print("Something happened that made me unable to write to the output file")
-		exit(1)
+		has_problem = True
 
 	except Exception:
 		err_print("Something really wrong happened and I could not tell what it is.")
+		has_problem = True
+
+	# Close output_file if the file having problem is the input file.
+	if (has_problem):
+
+		if not (output_file_problem):
+			output_file.close()
+			os.remove(output_file_path)
+
 		exit(1)
 
 	archive = {}
+
+	none_of_the_links_work = False
 
 	while True:
 
@@ -75,6 +99,10 @@ def main() -> None:
 
 		if not line:
 			playlists.close()
+
+			if (len(archive) == 0):
+				none_of_the_links_work = True
+
 			break
 
 		url = line.strip()
@@ -87,8 +115,13 @@ def main() -> None:
 		archive[this_playlist.get_id()] = this_playlist.construct_json_obj()
 
 	# I listen to songs that contain non-ascii characters a lot.
-	json.dump(archive, output_file, ensure_ascii=False, indent=4)
-	output_file.close()
+	if not (none_of_the_links_work):
+		json.dump(archive, output_file, ensure_ascii=False, indent=4)
+		output_file.close()
+
+	else:
+		output_file.close()
+		os.remove(output_file_path)
 	
 
 def err_print(*args, **kwargs) -> None:
@@ -157,6 +190,7 @@ def convert_playlist_url_to_playlist_obj(url: str) -> Union[Playlist,None]:
 	playlist_id = playlist_url_verifier(url)
 
 	if not (playlist_id):
+		err_print(f"The url for the playlist ({url}) is invalid, please recheck it.")
 		return None
 
 	this_playlist = Playlist(playlist_id) 
