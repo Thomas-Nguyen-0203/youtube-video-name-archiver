@@ -27,7 +27,7 @@ An example of a valid input file and its output can be found in example folder.
 
 Then in order to run the program you just need to run
 
-```bash
+```
 python3 archiver.py <name_of_input_file> <name_of_output_file>
 ```
 
