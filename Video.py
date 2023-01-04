@@ -46,3 +46,18 @@ class Video:
 		}
 
 		return json_obj
+
+	def is_deleted(self) -> bool:
+		'''
+		This method checks whether this video is deleted (either 
+		privatised by the uploader or nuked by Youtube)
+
+		If a video is not available or deleted, the youtube API won't 
+		return the uploader of the video, we can use this fact to determine whether the video is deleted/privatised.
+
+		Returns:
+			A boolean value indicating the current video is deleted or not.
+		'''
+
+		# This should be mentioned in archiver.py
+		return (self.channel == "Unknown Channel")
