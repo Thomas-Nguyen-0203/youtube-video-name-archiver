@@ -9,6 +9,25 @@ class Video:
 		self.id = id
 		self.link: str = YOUTUBE_VIDEO_PREFIX + self.id
 
+	@classmethod
+	def initiate_video_from_json(cls, json_repr: Dict[str, str]) -> 'Video':
+		'''
+		This method takes the JSON representation of the Video object and turn 
+		it into a Video object.
+
+		Params:
+			The dictionary which is the JSON representation of the video.
+
+		Returns:
+			The equivalent Video object.
+		'''
+
+		name = json_repr["name"]
+		channel = json_repr["channel"]
+		id = json_repr["id"]
+
+		return Video(name, channel, id)
+
 	def get_name(self) -> str:
 		return self.name
 
@@ -61,3 +80,7 @@ class Video:
 
 		# This should be mentioned in archiver.py
 		return (self.channel == "Unknown Channel")
+
+	# For debugging purpose.
+	def __repr__(self):
+		return f"{self.name} {self.channel}"
