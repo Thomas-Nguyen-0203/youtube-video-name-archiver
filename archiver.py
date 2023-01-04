@@ -1,3 +1,10 @@
+'''
+archiver.py: does the archiving of one or more Youtube playlists and save it 
+as a JSON file.
+
+Usage: python3 archiver.py <input_file> <output_file>
+'''
+
 # External
 import requests
 
@@ -48,7 +55,7 @@ def main() -> None:
 	if (archive_file_name.exists()):
 
 		print(f"File with name {archive_file_name.name} already exists, Overwrite the file? y/n")
-		stop = (input().lower() == "n")
+		stop = (input().strip().lower() == "n")
 
 	if (stop):
 		print("The program will now exit...")
@@ -128,7 +135,7 @@ def err_print(*args, **kwargs) -> None:
 	'''
 	This function is a wrapper for writing to stderr.
 
-	Args:
+	Params:
 		The parameters are like usual parameters of print()
 
 	Returns:
@@ -145,7 +152,7 @@ def playlist_url_verifier(url: str) -> Union[str,None]:
 	This function uses regular expression to verify whether the given URL is a 
 	valid URL to a Youtube playlist.
 
-	Args:
+	Params:
 		url: the url to the playlist.
 
 	Returns:
@@ -166,7 +173,7 @@ def convert_playlist_url_to_playlist_obj(url: str) -> Union[Playlist,None]:
 	This function takes in an url to a Youtube playlist and attempt to convert 
 	it to a playlist object.
 
-	Args:
+	Params:
 		url: the url to the playlist.
 
 	Returns:
