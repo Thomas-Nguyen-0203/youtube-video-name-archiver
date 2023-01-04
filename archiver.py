@@ -45,14 +45,15 @@ def main() -> None:
 	input_file = pathlib.Path(input_file_path)
 	input_file = input_file.expanduser()
 
-	if (input_file.samefile(archive_file_name)):
-		err_print("Input file cannot be the same file as output file. Please recheck your arguments.")
-		exit(1)
 
 	stop = False
 
 	# Warn the user of potential overwriting.
 	if (archive_file_name.exists()):
+
+		if (input_file.samefile(archive_file_name)):
+			err_print("Input file cannot be the same file as output file. Please recheck your arguments.")
+			exit(1)
 
 		print(f"File with name {archive_file_name.name} already exists, Overwrite the file? y/n")
 		stop = (input().strip().lower() == "n")
