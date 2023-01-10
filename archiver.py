@@ -15,11 +15,161 @@ import sys
 import pathlib
 import json
 import os
+import time
 
 # Internal
 from configuration import *
 from Video import Video
 from Playlist import Playlist
+from utilities import *
+from PlaceHolder import PlaceHolder
+
+class Archiver:
+
+	def __init__(self, input_file, output_file) -> None:
+		'''
+		A constructor, pretty self-explanatory so idk what to say.
+
+		Also the constructor also calls open_files() which is somewhat 
+		noteworthy.
+		'''
+
+		self.input_file_path = pathlib.Path(input_file).expanduser()
+		self.input_file = PlaceHolder.get_place_holder()
+
+		self.output_file_path = pathlib.Path(output_file).expanduser()
+		self.output_file = PlaceHolder.get_place_holder()
+
+		self.no_output = True
+
+		self.open_files()
+
+	def open_files(self) -> None:
+		'''
+		This method opens the file descriptors to the file in the paths passed 
+		through the constructor.
+
+		it will handle some basic problems like (P means problem, R means 
+		response): 
+
+			P: The output file already exists which means there is a risk in 
+			overwriting the original file.
+			
+			R: The program will inform the user then ask whether the user 
+			wants this to happen, exit if not, continue otherwise.
+
+			-------------------------------------------------------------------
+
+			P: The output file is the same as input file which means once we 
+			open the output file, the input file will be wiped of its original 
+			content.
+			
+			R: The program will inform the user then exit if the output file 
+			happens to be the same file as the input file.
+
+			-------------------------------------------------------------------
+			
+			P: The input file does not exist.
+			
+			R: The program will inform the user then exit.
+
+			-------------------------------------------------------------------
+
+			P: The program does not have enough permission to open files.
+			
+			R: The program will inform the user then exit.
+
+			-------------------------------------------------------------------
+			
+			P: Some unknown, unpredictable error occurs while opening files 
+			(idk maybe a nearby nuclear plant melts down which somehow flips a 
+			bit that makes the program unable to open the file)
+			
+			R: Maybe create a new issue on github ;)
+		'''
+		
+		if (self.output_file_path.exists()):
+
+			if (self.output_file_path.samefile(self.input_file_path)):
+				err_print("Input file cannot be the same file as output file. Please recheck your arguments.")
+
+				exit(1)
+
+			overwrite_permission = False
+
+			overwrite_permission = overwriting_file_warning(
+				self.output_file_path.name
+			)
+
+			# Warn the user of potential overwriting.
+			if not (overwrite_permission):
+
+				# For fun only :)
+				print("The program will now exit", end="", flush=True)
+				time.sleep(0.5)
+				print(".", end="", flush=True)
+				time.sleep(0.5)
+				print(".", end="", flush=True)
+				time.sleep(0.5)
+				print(".", end="", flush=True)
+				time.sleep(0.5)
+				print() 
+				exit()
+
+		self.input_file = input_file_opening(self.input_file_path.name)
+
+		self.output_file = output_file_opening(self.output_file_path.name)
+
+		if (self.output_file == PlaceHolder.get_place_holder() or 
+			self.input_file == PlaceHolder.get_place_holder()):
+
+			self.clean_up(1)
+
+	def main_work(self):
+		'''
+		This method is where the Archiver does most of its work.
+		'''
+
+		archive = {}
+
+		while True:
+			line = self.input_file.readline()
+
+			if not line:
+
+				if (len(archive) != 0):
+					self.no_output = False
+
+				break
+
+			url = line.strip()
+
+			this_playlist = convert_playlist_url_to_playlist_obj(url)
+
+			if not (this_playlist):
+				continue
+
+			archive[this_playlist.get_id()] = this_playlist.construct_json_obj()
+
+		if not (self.no_output):
+			json.dump(archive, self.output_file, ensure_ascii=False, indent=4)
+
+		self.clean_up(0)
+
+	def clean_up(self, err_code: int) -> None:
+		'''
+		This method is supposed to be called whenever the program thinks it 
+		should stop, it will close all opened file descriptors and remove the newly opened output file if there is no output from the program.
+		'''
+		self.input_file.close()
+		self.output_file.close()
+
+		if (self.no_output and 
+			self.input_file_path.exists()):
+
+			os.remove(self.input_file_path.name)
+		
+		exit(err_code)
 
 def main() -> None:
 	
@@ -38,116 +188,13 @@ def main() -> None:
 	output_file_path = sys.argv[2]
 	input_file_path = sys.argv[1]
 
-	# Check existence of both files.
-	archive_file_name = pathlib.Path(output_file_path)
-	archive_file_name = archive_file_name.expanduser()
+	archiver = Archiver(input_file_path, output_file_path)
 
-	input_file = pathlib.Path(input_file_path)
-	input_file = input_file.expanduser()
+	archiver.main_work()
 
 
-	stop = False
+# Helpful functions
 
-	# Warn the user of potential overwriting.
-	if (archive_file_name.exists()):
-
-		if (input_file.samefile(archive_file_name)):
-			err_print("Input file cannot be the same file as output file. Please recheck your arguments.")
-			exit(1)
-
-		print(f"File with name {archive_file_name.name} already exists, Overwrite the file? y/n")
-		stop = (input().strip().lower() == "n")
-
-	if (stop):
-		print("The program will now exit...")
-		exit()
-
-	output_file_problem = True
-	has_problem = False
-
-	try:
-		output_file = open(output_file_path, "w")
-
-		output_file_problem = False
-
-		playlists = input_file.open("r")
-
-	except PermissionError:
-		err_print("Please give me sufficient permission to open the files.")
-		has_problem = True
-
-	except FileNotFoundError:
-		err_print("The input file does not exist, please recheck your input file.")
-		has_problem = True
-
-	except OSError:
-		err_print("Something happened that made me unable to write to the output file")
-		has_problem = True
-
-	except Exception:
-		err_print("Something really wrong happened and I could not tell what it is.")
-		has_problem = True
-
-	# Close output_file if the file having problem is the input file.
-	if (has_problem):
-
-		if not (output_file_problem):
-			output_file.close()
-			os.remove(output_file_path)
-
-		exit(1)
-
-	archive = {}
-
-	none_of_the_links_work = False
-
-	while True:
-
-		line = playlists.readline()
-
-		if not line:
-			playlists.close()
-
-			if (len(archive) == 0):
-				none_of_the_links_work = True
-
-			break
-
-		url = line.strip()
-
-		this_playlist = convert_playlist_url_to_playlist_obj(url)
-
-		if not (this_playlist):
-			continue
-
-		archive[this_playlist.get_id()] = this_playlist.construct_json_obj()
-
-	# I listen to songs that contain non-ascii characters a lot.
-	if not (none_of_the_links_work):
-		json.dump(archive, output_file, ensure_ascii=False, indent=4)
-		output_file.close()
-
-	else:
-		output_file.close()
-		os.remove(output_file_path)
-	
-
-def err_print(*args, **kwargs) -> None:
-	'''
-	This function is a wrapper for writing to stderr.
-
-	Params:
-		The parameters are like usual parameters of print()
-
-	Returns:
-		None
-	
-	It works like print() but instead of writing to stdout, it writes to 
-	stderr.
-	'''
-
-	print(*args, **kwargs, file=sys.stderr)
-	
 def playlist_url_verifier(url: str) -> Union[str,None]:
 	'''
 	This function uses regular expression to verify whether the given URL is a 
@@ -208,8 +255,8 @@ def convert_playlist_url_to_playlist_obj(url: str) -> Union[Playlist,None]:
 	# Max size is 50 entries per call so we need to call it until we exhaust 
 	# the playlist.
 
-	# The cost is prob sum floor(n_i/50) from i = 1 to n.
-	# n_i denotes the size of playlist i.
+	# The cost is prob sum floor(N_i/50) from i = 1 to n.
+	# N_i denotes the size of playlist i.
 	# Assuming we have n playlists.
 
 	while True:
