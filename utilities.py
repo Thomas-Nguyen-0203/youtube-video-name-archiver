@@ -21,7 +21,7 @@ def err_print(*args, **kwargs) -> None:
 
     print(*args, **kwargs, file=sys.stderr)
 
-def input_file_opening(name: str):
+def input_file_opening(path_link: pathlib.Path):
     '''
     This function attempts to open the file as specified by the 
     name passed in through the argument for reading .
@@ -35,14 +35,16 @@ def input_file_opening(name: str):
     has_problem = False
 
     try:
-        file = open(name, "r")
+        file = path_link.open("r")
 
     except PermissionError:
-        err_print(f"Please give me sufficient permission to open file {name}")
+        err_print(
+            f"Please give me sufficient permission to open file {path_link.as_posix()}"
+        )
         has_problem = True
     
     except FileNotFoundError:
-        err_print(f"File {name} does not exist")
+        err_print(f"File {path_link.as_posix()} does not exist")
         has_problem = True
 
     except Exception:
@@ -54,7 +56,7 @@ def input_file_opening(name: str):
 
     return file
 
-def output_file_opening(name: str):
+def output_file_opening(path_link: pathlib.Path):
     '''
     This function attempts to open the file as specified by the 
     name passed in through the argument for writing.
@@ -68,10 +70,12 @@ def output_file_opening(name: str):
     has_problem = False
 
     try:
-        file = open(name, "w")
+        file = path_link.open("w")
 
     except PermissionError:
-        err_print(f"Please give me sufficient permission to open file {name}")
+        err_print(
+            f"Please give me sufficient permission to open file {path_link.as_posix()}"
+        )
         has_problem = True
 
     except Exception:
