@@ -165,9 +165,9 @@ class Archiver:
 		self.output_file.close()
 
 		if (self.no_output and 
-			self.input_file_path.exists()):
+			self.output_file_path.exists()):
 
-			os.remove(self.input_file_path.name)
+			os.remove(self.output_file_path.name)
 		
 		exit(err_code)
 
