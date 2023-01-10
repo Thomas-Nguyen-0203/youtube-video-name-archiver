@@ -34,10 +34,10 @@ class Archiver:
 		noteworthy.
 		'''
 
-		self.input_file_path = pathlib.Path(input_file).expanduser()
+		self.input_file_path = pathlib.Path(input_file).expanduser().resolve()
 		self.input_file = PlaceHolder.get_place_holder()
 
-		self.output_file_path = pathlib.Path(output_file).expanduser()
+		self.output_file_path = pathlib.Path(output_file).expanduser().resolve()
 		self.output_file = PlaceHolder.get_place_holder()
 
 		self.no_output = True
@@ -116,9 +116,9 @@ class Archiver:
 				print() 
 				exit()
 
-		self.input_file = input_file_opening(self.input_file_path.name)
+		self.input_file = input_file_opening(self.input_file_path)
 
-		self.output_file = output_file_opening(self.output_file_path.name)
+		self.output_file = output_file_opening(self.output_file_path)
 
 		if (self.output_file == PlaceHolder.get_place_holder() or 
 			self.input_file == PlaceHolder.get_place_holder()):
