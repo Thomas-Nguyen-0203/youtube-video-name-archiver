@@ -34,13 +34,14 @@ class Archiver:
 		noteworthy.
 		'''
 
-		self.input_file_path = pathlib.Path(input_file).expanduser().resolve()
+		self.input_file_path: pathlib.Path = pathlib.Path(input_file).expanduser().resolve()
 		self.input_file = PlaceHolder.get_place_holder()
 
-		self.output_file_path = pathlib.Path(output_file).expanduser().resolve()
+		self.output_file_path: pathlib.Path = pathlib.Path(output_file).expanduser().resolve()
+		
 		self.output_file = PlaceHolder.get_place_holder()
 
-		self.no_output = True
+		self.no_output: bool = True
 
 		self.open_files()
 
@@ -171,28 +172,6 @@ class Archiver:
 		
 		exit(err_code)
 
-def main() -> None:
-	
-	if (len(sys.argv) != 3):
-
-		err_print(
-			"Usage: python3 archiver.py <input_file> <output_file>",
-			"<input_file> should contain a valid <playlist_link> per line.",
-			"<playlist_link> is in the form of \"https://www.youtube.com/playlist?list=<playlist_id>\"",
-			"Also works for a video that is being watched from a playlist (ie, has a link of youtube.com/watch?v=<id>&list=<id>&ab_channel=<channel>",
-			sep="\n\n"
-		)
-
-		exit(1)
-
-	output_file_path = sys.argv[2]
-	input_file_path = sys.argv[1]
-
-	archiver = Archiver(input_file_path, output_file_path)
-
-	archiver.main_work()
-
-
 # Helpful functions
 
 def playlist_url_verifier(url: str) -> Union[str,None]:
@@ -302,6 +281,27 @@ def convert_playlist_url_to_playlist_obj(url: str) -> Union[Playlist,None]:
 		PARAMS["pageToken"] = result_json["nextPageToken"]
 
 	return this_playlist
+
+def main() -> None:
+	
+	if (len(sys.argv) != 3):
+
+		err_print(
+			"Usage: python3 archiver.py <input_file> <output_file>",
+			"<input_file> should contain a valid <playlist_link> per line.",
+			"<playlist_link> is in the form of \"https://www.youtube.com/playlist?list=<playlist_id>\"",
+			"Also works for a video that is being watched from a playlist (ie, has a link of youtube.com/watch?v=<id>&list=<id>&ab_channel=<channel>",
+			sep="\n\n"
+		)
+
+		exit(1)
+
+	output_file_path = sys.argv[2]
+	input_file_path = sys.argv[1]
+
+	archiver = Archiver(input_file_path, output_file_path)
+
+	archiver.main_work()
 
 if (__name__ == "__main__"):
 	main()
