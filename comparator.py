@@ -1,5 +1,5 @@
 '''
-comparator.py: Compare 2 archives together to notice what has changed.
+comparator.py: Compare 2 archives together to point out what has changed.
 
 Note that comparator.py only compares mutual playlists within the 2 archives, 
 which means if 2 archives have no mutual playlist, it will not report anything.
@@ -12,127 +12,104 @@ import sys
 import pathlib
 import os
 from typing import *
+from io import UnsupportedOperation
 
 # Internal
 from Video import Video
+from utilities import *
+from PlaceHolder import PlaceHolder
 
-def main():
+class Comparator:
+    
+    def __init__(
+        self, 
+        old_archive_file_path, 
+        new_archive_file_path, 
+        output_file_path
+    ) -> None:
+        '''
+        Good ol' constructor, can never go wrong.
+        '''
 
-    if (len(sys.argv) != 4):
-        err_print(
-            "Usage: python3 comparator.py <old_archive> <new_archive> <output_file>"
+        self.old_archive_file_path: pathlib.Path = pathlib.Path(
+            old_archive_file_path
+        ).expanduser()
+
+        self.new_archive_file_path: pathlib.Path = pathlib.Path(
+            new_archive_file_path
+        ).expanduser()
+
+        self.output_file_path: pathlib.Path = pathlib.Path(
+            output_file_path
+        ).expanduser()
+
+        self.output_file = PlaceHolder.get_place_holder()
+
+        self.no_output = True
+
+        # JSON objects of old and new archive.
+        self.old_archive: dict = None
+        self.new_archive: dict = None
+
+    def fetch_archives(self) -> None:
+        '''
+        This method will attempt to open the input files and retrieve the 
+        JSON representation of both old and new archives.
+        '''
+        old_archive_file = input_file_opening(
+            self.old_archive_file_path
         )
 
-        exit(1)
+        new_archive_file = input_file_opening(
+            self.new_archive_file_path
+        )
 
-    old_archive_path = pathlib.Path(sys.argv[1])
-    old_archive_path = old_archive_path.expanduser()
+        if (old_archive_file == PlaceHolder.get_place_holder() or 
+            new_archive_file == PlaceHolder.get_place_holder()):
 
-    new_archive_path = pathlib.Path(sys.argv[2])
-    new_archive_path = new_archive_path.expanduser()
+            exit(1)
 
-    output_file = pathlib.Path(sys.argv[3])
-    output_file = output_file.expanduser()
+        self.old_archive = convert_json_from_file_to_dict(
+            old_archive_file
+        )
 
-    if (output_file.exists()):
-        print(f"File with name {output_file.name} already exists, Overwrite the file? y/n")
-        stop = (input().strip().lower() == "n")
+        self.new_archive = convert_json_from_file_to_dict(
+            new_archive_file
+        )
 
-    if (stop):
-        print("The program will now exit...")
-        exit()
+        old_archive_file.close()
+        new_archive_file.close()
 
-    if (old_archive_path.samefile(output_file) or
-        new_archive_path.samefile(output_file)):
+        end_now = False
 
-        err_print("Any of the input files cannot be the same one as output file, please recheck your arguments")
+        if (self.old_archive == None or 
+            not check_format_of_archive(self.old_archive)):
 
-        exit(1)
+            err_print(f"File {self.old_archive_file_path.as_posix()} is not of correct format or is corrupted, please check it again.")
 
-    opened_files = []
-    has_problem = False
-
-    try:
-        old_archive = old_archive_path.open("r")
-        opened_files.append(old_archive)
-
-        new_archive = new_archive_path.open("r")
-        opened_files.append(new_archive)
-
-        output = output_file.open("w")
-
-    except PermissionError:
-        err_print("Please give me sufficient permission to open the files.")
-        has_problem = True
-
-    except FileNotFoundError:
-        err_print("The input file(s) may not exist, please recheck your files.")
-        has_problem = True
-
-    except Exception:
-        err_print("Something happened that prevented me from reading the files.")
-        has_problem = True
-
-    if (has_problem):
-        for file in opened_files:
-            file.close()
-
-        exit(1)
-
-    old_archive_problem = True
-    try:
-        old_archive_json = json.load(old_archive)
-        old_archive_problem = False
-
-        new_archive_json = json.load(new_archive)
-
-    except json.decoder.JSONDecodeError:
+            end_now = True
         
-        problem = (
-            old_archive_path.name if (old_archive_problem) 
-            else new_archive_path.name)
+        if (self.new_archive == None or 
+            not check_format_of_archive(self.new_archive)):
 
-        err_print(f"The archive in {problem} is not valid, please recheck it")
+            err_print(f"File {self.new_archive_file_path.as_posix()} is not of correct format or is corrupted, please check it again.")
 
-        output.close()
-        old_archive.close()
-        new_archive.close()
+            end_now = True
 
-        os.remove(output_file.name)
-        exit(1)
+        if (end_now):
+            exit(1)
 
-    # Record all the changes happened to mutual playlists. 
-    changes: Dict[str, Tuple[Union[List[Video], List[List[Video]]]]] = {}
-
-    # Iterate through the ids of the playlists in old archive.
-    for playlist_id in old_archive_json:
-
-        if (playlist_id in new_archive_json):
-
-            old_playlist = old_archive_json[playlist_id]["videos"]
-            new_playlist = new_archive_json[playlist_id]["videos"]
-
-            changes[playlist_id] = compare_video_set(
-                old_playlist, new_playlist
-            )
+    def main_work(self) -> None:
+        '''
+        The name is pretty much self-explanatory, the bulk work of the 
+        comparator.
+        '''
+        pass
+    
+    def write_to_output(self) -> None:
+        pass
 
 
-
-def err_print(*args, **kwargs) -> None:
-    '''
-    This function is a wrapper for writing to stderr.
-
-	Args:
-		The parameters are like usual parameters of print()
-
-	Returns:
-		None
-	
-	It works like print() but instead of writing to stdout, it writes to 
-	stderr.
-    '''
-
-    print(*args, **kwargs, file=sys.stderr)
 
 def compare_video_set(
     old_video_set: Dict[str, Dict[str, str]], 
@@ -212,6 +189,134 @@ def compare_video_set(
         ))
 
     return added, removed, changed
+
+def verify_json_format(to_be_verified: dict) -> bool:
+    '''
+    This function verifies whether the given dictionary is in a correct 
+    format given by the JSON format of an archive.
+
+    Params:
+        dict which is the archive that is to be verified.
+
+    Returns:
+        True if the archive is of appropriate format, False otherwise. 
+    '''
+    # TODO
+    pass
+
+def convert_json_from_file_to_dict(file) -> dict:
+    '''
+    This function will convert the JSON object in the opened file into an 
+    equivalent Python dictionary.
+
+    Params:
+        A file that is already opened for read.
+
+    Returns:
+        A dictionary if the file is the file is really JSON, None otherwise.
+    '''
+    try:
+        equivalent_dictionary = json.load(file)
+    
+    except json.decoder.JSONDecodeError:
+        return None
+
+    return equivalent_dictionary
+
+def check_format_of_video(video: dict) -> bool:
+    '''
+    This function checks whether the given dictionary is of correct format of 
+    a video as defined in README.
+
+    Params:
+        dict which is the video.
+
+    Returns:
+        True if it is correct, false otherwise.
+    ''' 
+
+    if not (isinstance(video, dict)):
+        return False
+
+    if ("id" not in video or 
+        "name" not in video or
+        "channel" not in video or 
+        "link" not in video):
+
+        return False
+
+    if (not isinstance(video["id"], str) or 
+        not isinstance(video["name"], str) or 
+        not isinstance(video["channel"], str) or 
+        not isinstance(video["link"], str)):
+        
+        return False
+
+    return True
+
+def check_format_of_playlist(playlist: dict) -> bool:
+    '''
+    This function checks whether the given dictionary is of correct format of 
+    a playlist as defined in README.
+
+    Params:
+        dict which is the playlist.
+
+    Returns:
+        True if it is correct, false otherwise.
+    '''
+
+    if (not isinstance(playlist, dict)):
+        return False
+
+    if ("id" not in playlist or 
+        "videos" not in playlist or 
+        "link" not in playlist):
+
+        return False
+
+    if (not isinstance(playlist["id"], str) or 
+        not isinstance(playlist["videos"], dict) or 
+        not isinstance(playlist["link"], str)):
+
+        return False
+
+    videos = playlist["videos"]
+
+    for video_id in videos:
+        
+        if not (check_format_of_video(videos[video_id])):
+            return False
+
+    return True
+
+
+def check_format_of_archive(archive: dict) -> bool:
+    '''
+    This function checks whether the given dictionary is of correct format of 
+    an archive as defined in README.
+
+    Params:
+        dict which is the archive.
+
+    Returns:
+        True if it is correct, false otherwise.
+    '''
+
+    if not (isinstance(archive, dict)):
+        return False
+
+    for playlist_id in archive:
+
+        if not (check_format_of_playlist(archive[playlist_id])):
+            return False
+
+    return True
+
+
+
+
+    
         
 def test():
 
@@ -221,6 +326,33 @@ def test():
     pass
 
 
+def main():
+
+    if (len(sys.argv) != 4):
+        err_print(
+            "Usage: python3 comparator.py <old_archive> <new_archive> <output_file>"
+        )
+
+        exit(1)
+
+    comparator: Comparator = Comparator(sys.argv[1], sys.argv[2], sys.argv[3])
+    comparator.fetch_archives()
+
+    # Record all the changes happened to mutual playlists. 
+    changes: dict = {}
+
+    # Iterate through the ids of the playlists in old archive.
+    # for playlist_id in old_archive_json:
+
+    #     if (playlist_id in new_archive_json):
+
+    #         old_playlist = old_archive_json[playlist_id]["videos"]
+    #         new_playlist = new_archive_json[playlist_id]["videos"]
+
+    #         changes[playlist_id] = compare_video_set(
+    #             old_playlist, new_playlist
+    #         )
+
 if (__name__ == "__main__"):
-    # main()
-    test()
+    main()
+    # test()
