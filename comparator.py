@@ -16,6 +16,7 @@ from io import UnsupportedOperation
 
 # Internal
 from Video import Video
+from Playlist import YOUTUBE_PLAYLIST_PREFIX
 from utilities import *
 from PlaceHolder import PlaceHolder
 
@@ -33,15 +34,15 @@ class Comparator:
 
         self.old_archive_file_path: pathlib.Path = pathlib.Path(
             old_archive_file_path
-        ).expanduser()
+        ).expanduser().resolve()
 
         self.new_archive_file_path: pathlib.Path = pathlib.Path(
             new_archive_file_path
-        ).expanduser()
+        ).expanduser().resolve()
 
         self.output_file_path: pathlib.Path = pathlib.Path(
             output_file_path
-        ).expanduser()
+        ).expanduser().resolve()
 
         self.output_file = PlaceHolder.get_place_holder()
 
@@ -50,6 +51,10 @@ class Comparator:
         # JSON objects of old and new archive.
         self.old_archive: dict = None
         self.new_archive: dict = None
+
+        # This variable record all the changes happening between mutual 
+        # playlists.
+        self.changes: dict = {}
 
     def fetch_archives(self) -> None:
         '''
@@ -99,24 +104,116 @@ class Comparator:
         if (end_now):
             exit(1)
 
+    def open_output_file(self) -> None:
+        '''
+        This method will attempt to test whether the output file can be 
+        correctly opened by the program so that the user does not have to waste their time waiting for the program to complete before being notified that the output file path is faulty. 
+        '''
+        
+        self.output_file = output_file_opening(self.output_file_path)
+
+        if (self.output_file == PlaceHolder.get_place_holder()):
+            exit(1)
+            
     def main_work(self) -> None:
         '''
         The name is pretty much self-explanatory, the bulk work of the 
         comparator.
         '''
-        pass
+        
+        for playlist_id in self.old_archive:
+
+            if (playlist_id in self.new_archive):
+
+                old_playlist = self.old_archive[playlist_id]["videos"]
+                new_playlist = self.new_archive[playlist_id]["videos"]
+
+                self.changes[playlist_id] = compare_video_set(
+                    old_playlist, new_playlist
+                )
     
     def write_to_output(self) -> None:
-        pass
+        '''
+        This method logs the findings to output file for each mutual playlist 
+        between the 2 archives.
+        '''
 
+        for mutual_playlist_id in self.changes:
 
+            this_playlist_changes: tuple = self.changes[mutual_playlist_id]
 
+            if (check_changes_empty(this_playlist_changes)):
+                self.output_file.write(f"No changes for playlist with id {mutual_playlist_id} ({YOUTUBE_PLAYLIST_PREFIX}{mutual_playlist_id}) \n\n")
+                continue
+
+            self.output_file.write(f"The changes in playlist with id {mutual_playlist_id} ({YOUTUBE_PLAYLIST_PREFIX}{mutual_playlist_id}):\n\n")
+
+            added_videos: list = this_playlist_changes[0]
+
+            self.output_file.write(f"Added ({len(added_videos)} video(s) added):\n")
+
+            if (len(added_videos) == 0):
+                self.output_file.write("None\n\n")
+
+            else:
+                for index, video in enumerate(added_videos):
+
+                    self.output_file.write(f"+ \"{video.get_name()}\" by channel \"{video.get_channel()}\"")
+
+                    if (index != len(added_videos) - 1):
+                        
+                        self.output_file.write("\n")
+                    else:
+                        self.output_file.write("\n\n")
+
+            removed_videos: list = this_playlist_changes[1]
+
+            self.output_file.write(f"Removed: ({len(removed_videos)} video(s) removed)\n")
+
+            if (len(removed_videos) == 0):
+                self.output_file.write("None\n\n")
+            
+            else:
+                for index, video in enumerate(removed_videos):
+
+                    self.output_file.write(f"- \"{video.get_name()}\" by channel \"{video.get_channel()}\"")
+
+                    if (index != len(removed_videos) - 1):
+                        self.output_file.write("\n")
+
+                    else:
+                        self.output_file.write("\n\n")
+
+            changed_videos: list = this_playlist_changes[2]
+
+            self.output_file.write(f"Changed ({len(changed_videos)} video(s) changed):\n")            
+
+            if (len(changed_videos) == 0):
+                self.output_file.write("None")
+            
+            else: 
+                for index, videos in enumerate(changed_videos):
+                    old_video: Video = videos[0]
+                    new_video: Video = videos[1]
+
+                    if (old_video.is_deleted()):
+                        self.output_file.write(f"{old_video.get_name()} --> \"{new_video.get_name()}\" by channel \"{new_video.get_channel()}\"")
+
+                    else:
+                        self.output_file.write(f"\"{old_video.get_name()}\" by \"{old_video.get_channel()}\" --> {new_video.get_name()}")
+
+                    if (index != len(changed_videos) - 1):
+                        self.output_file.write("\n")
+
+        self.output_file.close()
+         
 def compare_video_set(
     old_video_set: Dict[str, Dict[str, str]], 
     new_video_set: Dict[str, Dict[str, str]]
-) -> Tuple[Union[List[Video], List[List[Video]]]]:
+) -> tuple:
     '''
-    This function takes in 2 videos attributes of a playlist then find the differences between them.
+    This function takes in 2 videos attributes of a playlist then find the 
+    differences between them.
 
     Params:
         videos attribute of the first playlist.
@@ -190,19 +287,24 @@ def compare_video_set(
 
     return added, removed, changed
 
-def verify_json_format(to_be_verified: dict) -> bool:
+def check_changes_empty(changes: tuple) -> bool:
     '''
-    This function verifies whether the given dictionary is in a correct 
-    format given by the JSON format of an archive.
+    This function checks whether the result given by the function 
+    compare_video_set is empty or not (ie there is no change in the mutual playlist between the two archives)
 
     Params:
-        dict which is the archive that is to be verified.
+        tuple which is the same tuple returned by the function \
+        compare_video_set.
 
     Returns:
-        True if the archive is of appropriate format, False otherwise. 
+        True if it is empty (no change), False otherwise.
     '''
-    # TODO
-    pass
+
+    for i in changes:
+        if len(i) != 0:
+            return False
+
+    return True
 
 def convert_json_from_file_to_dict(file) -> dict:
     '''
@@ -290,7 +392,6 @@ def check_format_of_playlist(playlist: dict) -> bool:
 
     return True
 
-
 def check_format_of_archive(archive: dict) -> bool:
     '''
     This function checks whether the given dictionary is of correct format of 
@@ -313,19 +414,6 @@ def check_format_of_archive(archive: dict) -> bool:
 
     return True
 
-
-
-
-    
-        
-def test():
-
-    test_old_vid_set = json.load(open("old_vid_set_ex.json", "r"))
-    test_new_vid_set = json.load(open("new_vid_set_ex.json", "r"))
-    print(compare_video_set(test_old_vid_set, test_new_vid_set))
-    pass
-
-
 def main():
 
     if (len(sys.argv) != 4):
@@ -337,22 +425,9 @@ def main():
 
     comparator: Comparator = Comparator(sys.argv[1], sys.argv[2], sys.argv[3])
     comparator.fetch_archives()
-
-    # Record all the changes happened to mutual playlists. 
-    changes: dict = {}
-
-    # Iterate through the ids of the playlists in old archive.
-    # for playlist_id in old_archive_json:
-
-    #     if (playlist_id in new_archive_json):
-
-    #         old_playlist = old_archive_json[playlist_id]["videos"]
-    #         new_playlist = new_archive_json[playlist_id]["videos"]
-
-    #         changes[playlist_id] = compare_video_set(
-    #             old_playlist, new_playlist
-    #         )
+    comparator.open_output_file()
+    comparator.main_work()
+    comparator.write_to_output()
 
 if (__name__ == "__main__"):
     main()
-    # test()
