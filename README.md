@@ -35,13 +35,25 @@ And the program will produce its output and write to the file with name given by
 
 Since this program lets the user name its own output, I will not enforce any naming rules to the output file, however, since the output is in JSON syntax, a file extension of `.json` is advised.
 
+
 ### Comparator
+To use the comparator, you have to have 2 archives (not necessarily different but comparing the same archive to itself is kinda against the point of a comparator), the 2 archives need not to contain the same playlists because the comparator will find all mutual playlists between the 2 archives and compare them.
 
-<!--TODO-->
+Its purpose is to compare between the same set of playlists at 2 different points in time (old archive and new archive) and find out what have happened to all the playlists after that time period. The comparator will make a list of added videos, removed videos and videos that changed (going from private to non-private, going from normal to deleted and vice-versa) for each mutual playlist and log that to the output file indicated by the user.
 
-## JSON-representation of various objects
+In order to run the comparator, you need to run the command
 
-JSON-representation of a video
+```
+python3 comparator.py <old_archive> <new_archive> <output_file>
+```
+
+Example input-output will be included **soon**!!!
+
+## Side Information
+
+### JSON-representation of various objects (relevant to the program and how it will output information)
+
+#### JSON-representation of a video
 
 ```python
 video = {
@@ -52,7 +64,7 @@ video = {
 }
 ```
 
-JSON-representation of a playlist
+#### JSON-representation of a playlist
 
 ```python
 playlist = {
@@ -64,7 +76,7 @@ playlist = {
 }
 ```
 
-JSON-representation of an archive
+#### JSON-representation of an archive
 
 ```python
 archive = {
@@ -76,10 +88,9 @@ __Note__: an archive may have one or more playlists.
 
 The use of a dictionary instead of an array will help a lot with speed once we are comparing 2 archives and 2 playlists.
 
-
-# Cost per run
+### Cost per run
 Since I chose 50 videos per call (the maximum number), the expected cost per run is:
-$$\sum_{i = 1}^n \left\lceil\frac{N_i}{50}\right\rceil$$
+$$\sum_{i = 1}^n \left\lceil\frac{N_i}{50}\right\rceil \text{quota}$$ 
 for: 
 - $n$ the number of playlists of the input
 - $N_i$ the number of videos in the $i^{th}$ playlist  
