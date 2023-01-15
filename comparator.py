@@ -72,6 +72,9 @@ class Comparator:
         if (old_archive_file == PlaceHolder.get_place_holder() or 
             new_archive_file == PlaceHolder.get_place_holder()):
 
+            old_archive_file.close()
+            new_archive_file.close()
+
             exit(1)
 
         self.old_archive = convert_json_from_file_to_dict(
@@ -168,7 +171,7 @@ class Comparator:
 
             removed_videos: list = this_playlist_changes[1]
 
-            self.output_file.write(f"Removed: ({len(removed_videos)} video(s) removed)\n")
+            self.output_file.write(f"Removed ({len(removed_videos)} video(s) removed):\n")
 
             if (len(removed_videos) == 0):
                 self.output_file.write("None\n\n")
