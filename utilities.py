@@ -35,7 +35,7 @@ def input_file_opening(path_link: pathlib.Path):
     has_problem = False
 
     try:
-        file = path_link.open("r")
+        file = path_link.open("r", encoding="utf-8")
 
     except PermissionError:
         err_print(
@@ -70,7 +70,7 @@ def output_file_opening(path_link: pathlib.Path):
     has_problem = False
 
     try:
-        file = path_link.open("w")
+        file = path_link.open("w", encoding="utf-8")
 
     except PermissionError:
         err_print(
