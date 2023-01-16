@@ -12,7 +12,7 @@ import sys
 import pathlib
 import os
 from typing import *
-from io import UnsupportedOperation
+import time
 
 # Internal
 from Video import Video
@@ -112,6 +112,27 @@ class Comparator:
         This method will attempt to test whether the output file can be 
         correctly opened by the program so that the user does not have to waste their time waiting for the program to complete before being notified that the output file path is faulty. 
         '''
+
+        if (self.output_file_path.exists()):
+
+            overwrite_permission = overwriting_file_warning(
+                self.output_file_path.name
+            )
+
+            if not (overwrite_permission):
+            
+                print("The program will now exit", end="", flush=True)
+                time.sleep(0.5)
+                print(".", end="", flush=True)
+                time.sleep(0.5)
+                print(".", end="", flush=True)
+                time.sleep(0.5)
+                print(".", end="", flush=True)
+                time.sleep(0.5)
+                print() 
+                exit()
+
+
         
         self.output_file = output_file_opening(self.output_file_path)
 
