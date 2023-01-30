@@ -1,0 +1,44 @@
+Reporting the changes of the mutual playlists between the 2 archives after 0 days, 0 hours, 0 minutes, 0 seconds
+
+The changes in playlist with id OLAK5uy_nyhf64T11PUg4ZfpZffqMO_7rXaMX255M (https://www.youtube.com/playlist?list=OLAK5uy_nyhf64T11PUg4ZfpZffqMO_7rXaMX255M):
+
+Added (2 video(s) added):
++ "灼熱にて純情(wii-wii-woo) / 星街すいせい(official)" by channel "Suisei Channel"
++ "FACT" by channel "Tokoyami Towa - Topic"
+
+Removed (2 video(s) removed):
+- "【Sign収録】ピッとして！マーマレード Music Video【ときのそらオリジナル楽曲】" by channel "ときのそら"
+- "メアリースイート" by channel "TOKINOSORA - Topic"
+
+Changed (2 video(s) changed):
+Private video --> "エレクトリカル・サーフィン" by channel "TOKINOSORA - Topic"
+Private video --> "黄昏ミッドナイト" by channel "TOKINOSORA - Topic"
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+The changes in playlist with id OLAK5uy_mmFNzg9jCxCPLQgiMLFsAL543DzMN8AeE (https://www.youtube.com/playlist?list=OLAK5uy_mmFNzg9jCxCPLQgiMLFsAL543DzMN8AeE):
+
+Added (2 video(s) added):
++ "【Sign収録】ピッとして！マーマレード Music Video【ときのそらオリジナル楽曲】" by channel "ときのそら"
++ "メアリースイート" by channel "TOKINOSORA - Topic"
+
+Removed (2 video(s) removed):
+- "Palette" by channel "Tokoyami Towa - Topic"
+- "FACT" by channel "Tokoyami Towa - Topic"
+
+Changed (1 video(s) changed):
+"ミッドナイト・ランナウェイ" by "Tokoyami Towa - Topic" --> Private video
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+The changes in playlist with id OLAK5uy_lMmU0s0Cy7jnLSImMkl_aLHFTnQ2K5WCE (https://www.youtube.com/playlist?list=OLAK5uy_lMmU0s0Cy7jnLSImMkl_aLHFTnQ2K5WCE):
+
+Added (1 video(s) added):
++ "Palette" by channel "Tokoyami Towa - Topic"
+
+Removed (1 video(s) removed):
+- "灼熱にて純情(wii-wii-woo) / 星街すいせい(official)" by channel "Suisei Channel"
+
+Changed (2 video(s) changed):
+"Aseta Hanamidori" by "Suisei Hoshimachi - Topic" --> Deleted video
+"Damn Good Day" by "Suisei Hoshimachi - Topic" --> Private video
