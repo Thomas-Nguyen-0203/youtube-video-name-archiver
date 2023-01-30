@@ -131,7 +131,11 @@ class Archiver:
 		This method is where the Archiver does most of its work.
 		'''
 
-		archive = {}
+		playlists = {}
+		archive = {
+			"time": time.strftime(TIME_FORMAT_STR),
+			"playlists": playlists
+		}
 
 		while True:
 			line = self.input_file.readline()
@@ -150,7 +154,7 @@ class Archiver:
 			if not (this_playlist):
 				continue
 
-			archive[this_playlist.get_id()] = this_playlist.construct_json_obj()
+			playlists[this_playlist.get_id()] = this_playlist.construct_json_obj()
 
 		if not (self.no_output):
 			json.dump(archive, self.output_file, ensure_ascii=False, indent=4)
@@ -220,7 +224,6 @@ def convert_playlist_url_to_playlist_obj(url: str) -> Union[Playlist,None]:
 	}
 	
 	# Check if the url is a valid one using regex.
-
 	playlist_id = playlist_url_verifier(url)
 
 	if not (playlist_id):
