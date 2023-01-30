@@ -100,8 +100,8 @@ for:
 
 ```python
 archive = {
-	time: str,
-	playlists: {
+	"time": str,
+	"playlists": {
 		playlist_id : playlist
 	}
 }
