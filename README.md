@@ -47,7 +47,7 @@ In order to run the comparator, you need to run the command
 python3 comparator.py <old_archive> <new_archive> <output_file>
 ```
 
-Example input-output will be included **soon**!!!
+An example input files and corresponding output file can be found in example folder.
 
 ## Side Information
 
@@ -77,10 +77,22 @@ playlist = {
 ```
 
 #### JSON-representation of an archive
-
+**DEPRECATED**
 ```python
 archive = {
 	playlist_id : playlist
+}
+```
+
+**UPDATE**
+
+As of the changes made at 2023-01-30, the new json-representation of an archive became
+```python
+archive = {
+	"time": str,
+	"playlists": {
+		playlist_id: playlist
+	}
 }
 ```
 
