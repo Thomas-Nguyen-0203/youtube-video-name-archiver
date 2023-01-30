@@ -2,7 +2,9 @@ from typing import *
 from Video import Video
 import json
 
-YOUTUBE_PLAYLIST_PREFIX = "https://www.youtube.com/playlist?list="
+# internal
+from configuration import YOUTUBE_PLAYLIST_PREFIX
+
 
 class Playlist:
 
