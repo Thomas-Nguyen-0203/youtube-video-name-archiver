@@ -94,3 +94,15 @@ $$\sum_{i = 1}^n \left\lceil\frac{N_i}{50}\right\rceil \text{quota}$$
 for: 
 - $n$ the number of playlists of the input
 - $N_i$ the number of videos in the $i^{th}$ playlist  
+
+## Planned Changes
+- The archive objects will take the following JSON-representation instead
+
+```python
+archive = {
+	time: str,
+	playlists: {
+		playlist_id : playlist
+	}
+}
+```
