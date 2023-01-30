@@ -234,7 +234,7 @@ class Comparator:
             if (len(changed_videos) == 0):
                 
                 if (main_loop_index != len(self.changes) - 1):
-                    self.output_file.write("None\n\n")
+                    self.output_file.write("None\n\n" + "-"*156 + "\n\n")
                 else:
                     self.output_file.write("None")
             
@@ -251,6 +251,10 @@ class Comparator:
 
                     if (index != len(changed_videos) - 1):
                         self.output_file.write("\n")
+
+                    else:
+                        if (main_loop_index != len(self.changes) - 1):
+                            self.output_file.write("\n\n" + "-"*156 + "\n\n")
 
         self.output_file.close()
          
