@@ -13,10 +13,11 @@ import pathlib
 import os
 from typing import *
 import time
+import datetime
 
 # Internal
 from Video import Video
-from Playlist import YOUTUBE_PLAYLIST_PREFIX
+from configuration import YOUTUBE_PLAYLIST_PREFIX,TIME_FORMAT_STR
 from utilities import *
 from PlaceHolder import PlaceHolder
 
@@ -48,9 +49,12 @@ class Comparator:
 
         self.no_output = True
 
-        # JSON objects of old and new archive.
-        self.old_archive: dict = None
-        self.new_archive: dict = None
+        # JSON objects of old and new archive playlists.
+        self.old_archive_playlists: dict = None
+        self.old_archive_date: time.struct_time = None
+    
+        self.new_archive_playlists: dict = None
+        self.new_archive_date: time.struct_time = None
 
         # This variable record all the changes happening between mutual 
         # playlists.
@@ -77,11 +81,11 @@ class Comparator:
 
             exit(1)
 
-        self.old_archive = convert_json_from_file_to_dict(
+        old_archive = convert_json_from_file_to_dict(
             old_archive_file
         )
 
-        self.new_archive = convert_json_from_file_to_dict(
+        new_archive = convert_json_from_file_to_dict(
             new_archive_file
         )
 
@@ -90,15 +94,15 @@ class Comparator:
 
         end_now = False
 
-        if (self.old_archive == None or 
-            not check_format_of_archive(self.old_archive)):
+        if (old_archive == None or 
+            not check_format_of_archive(old_archive)):
 
             err_print(f"File {self.old_archive_file_path.as_posix()} is not of correct format or is corrupted, please check it again.")
 
             end_now = True
         
-        if (self.new_archive == None or 
-            not check_format_of_archive(self.new_archive)):
+        if (new_archive == None or 
+            not check_format_of_archive(new_archive)):
 
             err_print(f"File {self.new_archive_file_path.as_posix()} is not of correct format or is corrupted, please check it again.")
 
@@ -106,6 +110,12 @@ class Comparator:
 
         if (end_now):
             exit(1)
+
+        self.old_archive_playlists = old_archive["playlists"]
+        self.old_archive_date = parse_time(old_archive["time"])
+
+        self.new_archive_playlists = new_archive["playlists"]
+        self.new_archive_date = parse_time(new_archive["time"])
 
     def open_output_file(self) -> None:
         '''
@@ -145,12 +155,12 @@ class Comparator:
         comparator.
         '''
         
-        for playlist_id in self.old_archive:
+        for playlist_id in self.old_archive_playlists:
 
-            if (playlist_id in self.new_archive):
+            if (playlist_id in self.new_archive_playlists):
 
-                old_playlist = self.old_archive[playlist_id]["videos"]
-                new_playlist = self.new_archive[playlist_id]["videos"]
+                old_playlist = self.old_archive_playlists[playlist_id]["videos"]
+                new_playlist = self.new_archive_playlists[playlist_id]["videos"]
 
                 self.changes[playlist_id] = compare_video_set(
                     old_playlist, new_playlist
@@ -161,13 +171,22 @@ class Comparator:
         This method logs the findings to output file for each mutual playlist 
         between the 2 archives.
         '''
+        if (len(self.changes) != 0):
 
-        for mutual_playlist_id in self.changes:
+            time_apart = get_time_apart(
+                self.old_archive_date,
+                self.new_archive_date
+            )
+
+            self.output_file.write(f"Reporting the changes of the mutual playlists between the 2 archives after {time_apart[0]} days, {time_apart[1]} hours, {time_apart[2]} minutes, {time_apart[3]} seconds\n\n")
+
+
+        for main_loop_index, mutual_playlist_id in enumerate(self.changes):
 
             this_playlist_changes: tuple = self.changes[mutual_playlist_id]
 
             if (check_changes_empty(this_playlist_changes)):
-                self.output_file.write(f"No changes for playlist with id {mutual_playlist_id} ({YOUTUBE_PLAYLIST_PREFIX}{mutual_playlist_id}) \n\n")
+                self.output_file.write(f"0 changes for playlist with id {mutual_playlist_id} ({YOUTUBE_PLAYLIST_PREFIX}{mutual_playlist_id}) \n\n")
                 continue
 
             self.output_file.write(f"The changes in playlist with id {mutual_playlist_id} ({YOUTUBE_PLAYLIST_PREFIX}{mutual_playlist_id}):\n\n")
@@ -213,7 +232,11 @@ class Comparator:
             self.output_file.write(f"Changed ({len(changed_videos)} video(s) changed):\n")            
 
             if (len(changed_videos) == 0):
-                self.output_file.write("None")
+                
+                if (main_loop_index != len(self.changes) - 1):
+                    self.output_file.write("None\n\n")
+                else:
+                    self.output_file.write("None")
             
             else: 
                 for index, videos in enumerate(changed_videos):
@@ -431,12 +454,109 @@ def check_format_of_archive(archive: dict) -> bool:
     if not (isinstance(archive, dict)):
         return False
 
-    for playlist_id in archive:
+    if ("time" not in archive or
+        "playlists" not in archive):
 
-        if not (check_format_of_playlist(archive[playlist_id])):
+        return False
+
+    if (not isinstance(archive["time"], str) or 
+        not isinstance(archive["playlists"], dict)):
+
+        return False
+
+    if (not check_time_format(archive["time"])):
+        return False
+
+    playlists = archive["playlists"]
+
+    for playlist_id in playlists:
+
+        if not (check_format_of_playlist(playlists[playlist_id])):
             return False
 
     return True
+
+def check_time_format(time_str: str) -> bool:
+    '''
+    This function checks whether the time string of the archive is of correct 
+    format.
+
+    Params:
+        str which is the time string.
+
+    Returns:
+        True if correct, False otherwise.
+    '''
+
+    try:
+        time.strptime(time_str, TIME_FORMAT_STR)
+    except ValueError:
+        return False
+
+    return True
+
+def parse_time(time_str: str) -> time.struct_time:
+    '''
+    This function will parse the time string of the correct format into the 
+    equivalent struct_time object.
+
+    Params:
+        str which is the time string of the correct format.
+
+    Returns:
+        The equivalent struct_time object.
+    '''
+
+    return time.strptime(time_str, TIME_FORMAT_STR)
+
+def get_time_apart(
+    time1: time.struct_time,
+    time2: time.struct_time
+) -> Tuple[int, int, int, int]:
+    '''
+    This function will calculate the number of days, hours, minutes and seconds apart between the 2 time 
+    stamps. It will return the absolute difference so the order of the 
+    parameters does not matter.
+
+    Params:
+        2 struct_time objects which represent the 2 different timestamps
+
+    Returns
+        A tuple of the format (days, hours, minutes, seconds) which represents 
+        the difference between the 2 timestamps.
+    '''
+
+    datetime1 = datetime.datetime(
+        year=time1.tm_year,
+        month=time1.tm_mon,
+        day=time1.tm_mday,
+        hour=time1.tm_hour,
+        minute=time1.tm_min,
+        second=time1.tm_sec
+    )
+
+    datetime2 = datetime.datetime(
+        year=time2.tm_year,
+        month=time2.tm_mon,
+        day=time2.tm_mday,
+        hour=time2.tm_hour,
+        minute=time2.tm_min,
+        second=time2.tm_sec
+    )
+
+    time_apart: datetime.timedelta = abs(datetime1 - datetime2)
+
+    days_apart: int = time_apart.days
+
+    seconds_apart: int = time_apart.seconds
+
+    hours_apart: int = seconds_apart//3600
+    seconds_apart -= 3600*hours_apart
+
+    minutes_apart: int = seconds_apart//60
+    seconds_apart -= 60*minutes_apart
+
+    return (days_apart, hours_apart, minutes_apart, seconds_apart)
 
 def main():
 
